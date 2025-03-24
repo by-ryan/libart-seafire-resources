@@ -1,0 +1,6 @@
+$out_root/
+{
+  include art/seafire/resources/
+}
+
+export $out_root/art/seafire/resources/$import.target

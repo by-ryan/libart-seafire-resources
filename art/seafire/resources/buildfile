@@ -1,0 +1,67 @@
+intf_libs = # Interface dependencies.
+impl_libs = # Implementation dependencies.
+
+import intf_libs =+ libart-seafire-common%lib{art-seafire-common}
+import intf_libs =+ libart-seafire-protocol%lib{art-seafire-protocol}
+import intf_libs =+ libart-seafire-server%lib{art-seafire-server}
+import intf_libs =+ libart-seafire-representation%lib{art-seafire-representation}
+
+./: lib{art-seafire-resources}: libul{art-seafire-resources}
+
+libul{art-seafire-resources}: {hxx ixx txx cxx}{** -**.test... -version} \
+                              {hxx            }{                version}
+
+libul{art-seafire-resources}: $impl_libs $intf_libs
+
+# Unit tests.
+#
+exe{*.test}:
+{
+  test = true
+  install = false
+}
+
+for t: cxx{**.test...}
+{
+  d = $directory($t)
+  n = $name($t)...
+
+  ./: $d/exe{$n}: $t $d/{hxx ixx txx}{+$n} $d/testscript{+$n}
+  $d/exe{$n}: libul{art-seafire-resources}: bin.whole = false
+}
+
+hxx{version}: in{version} $src_root/manifest
+{
+  dist  = true
+  clean = ($src_root != $out_root)
+}
+
+# Build options.
+#
+cxx.poptions =+ "-I$out_root" "-I$src_root"
+
+# Export options.
+#
+lib{art-seafire-resources}:
+{
+  cxx.export.poptions = "-I$out_root" "-I$src_root"
+  cxx.export.libs = $intf_libs
+}
+
+# For pre-releases use the complete version to make sure they cannot
+# be used in place of another pre-release or the final version. See
+# the version module for details on the version.* variable values.
+#
+if $version.pre_release
+  lib{art-seafire-resources}: bin.lib.version = "-$version.project_id"
+else
+  lib{art-seafire-resources}: bin.lib.version = "-$version.major.$version.minor"
+
+# Install into the art/seafire/resources/ subdirectory of, say, /usr/include/
+# recreating subdirectories.
+#
+{hxx ixx txx}{*}:
+{
+  install         = include/art/seafire/resources/
+  install.subdirs = true
+}
